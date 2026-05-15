@@ -6,30 +6,45 @@
     <title>교실 배틀쉽</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div id="auth-screen">
-        <h1>🚢 교실 배틀쉽</h1>
-        <input type="text" id="nickname" placeholder="팀명(닉네임) 입력">
-        <select id="room-select">
-            <option value="room1">1번 방</option>
-            <option value="room2">2번 방</option>
-            <option value="room3">3번 방</option>
-        </select>
-        <button id="login-btn">게임 접속</button>
+        <div class="intro-content">
+            <div class="main-logo">🚢</div>
+            <h1>BATTLESHIP</h1>
+            <p class="subtitle">교실 실시간 함대 전투</p>
+            
+            <div class="login-box">
+                <input type="text" id="nickname" placeholder="팀명을 입력하세요">
+                <select id="room-select">
+                    <option value="room1">📍 1번 작전 구역</option>
+                    <option value="room2">📍 2번 작전 구역</option>
+                    <option value="room3">📍 3번 작전 구역</option>
+                </select>
+                <button id="login-btn">전투 개시</button>
+            </div>
+            <p class="notice">* 입장 순서에 따라 <span class="red-text">홍팀</span>/<span class="blue-text">청팀</span> 자동 배정</p>
+        </div>
     </div>
 
     <div id="game-screen" class="hidden">
         <div class="status-bar">
-            <span id="display-room"></span> | <span id="display-name"></span>
-            <div id="game-info">상태: 접속 대기 중...</div>
+            <div class="user-info">
+                <span id="display-room" class="room-badge"></span>
+                <span id="display-name"></span>
+            </div>
+            <div id="game-info">대기 중...</div>
         </div>
 
         <div class="boards-container">
-            <div class="board-wrapper">
-                <h3>내 진지 (배 배치)</h3>
+            <div class="board-wrapper left">
+                <h3>우리 함대 진지</h3>
                 <div id="my-board" class="grid"></div>
                 <div id="ship-selector">
-                    <button id="rotate-btn">방향: 가로</button>
+                    <div class="selector-header">
+                        <span>함선 배치</span>
+                        <button id="rotate-btn">방향: 가로</button>
+                    </div>
                     <div class="ship-buttons">
                         <button class="ship-btn" data-size="4">항공모함(4)</button>
                         <button class="ship-btn" data-size="3">순양함(3)</button>
@@ -38,21 +53,20 @@
                         <button class="ship-btn" data-size="1">잠수함(1)</button>
                     </div>
                 </div>
+                <button id="ready-btn">전투 배치 완료</button>
             </div>
 
-            <div class="board-wrapper">
-                <h3>상대 진지 (공격)</h3>
+            <div class="board-wrapper right">
+                <h3>상대 함대 진지</h3>
                 <div id="enemy-board" class="grid"></div>
+                <div class="footer-area">
+                    <p class="guide">적 함대를 클릭하여 공격하세요!</p>
+                    <button id="reset-btn" class="admin-btn">리셋 (password: reset)</button>
+                </div>
             </div>
-        </div>
-
-        <div class="controls">
-            <button id="ready-btn">배치 완료</button>
-            <button id="reset-btn" class="admin-btn">교사용 리셋</button>
         </div>
     </div>
 
-    <!-- Firebase SDK (v10+) -->
     <script type="module" src="script.js"></script>
 </body>
 </html>

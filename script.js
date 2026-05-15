@@ -61,7 +61,25 @@ document.getElementById('rotate-btn').onclick = (e) => {
 };
 
 function placeShip(startId) {
-    if (!selectedShipSize || !selectedShipBtn || gameState !== 'setup') return;
+    if (gameState !== 'setup') return;
+
+    // 1. 이미 배가 있는 곳을 누르면 해당 배를 취소(삭제)
+    if (myBoardEl.children[startId].classList.contains('ship')) {
+        const shipIndex = myShips.findIndex(ship => ship.cells.includes(parseInt(startId)));
+        if (shipIndex !== -1) {
+            const targetShip = myShips[shipIndex];
+            targetShip.cells.forEach(id => {
+                deployedCells.delete(id);
+                myBoardEl.children[id].classList.remove('ship');
+            });
+            targetShip.btn.disabled = false; // 버튼 재활성화
+            myShips.splice(shipIndex, 1);
+        }
+        return;
+    }
+
+    // 2. 새 배 배치 로직
+    if (!selectedShipSize || !selectedShipBtn) return;
     const cells = [];
     for (let i = 0; i < selectedShipSize; i++) {
         let curr = isHorizontal ? startId + i : startId + (i * 8);
@@ -73,10 +91,12 @@ function placeShip(startId) {
         deployedCells.add(id);
         myBoardEl.children[id].classList.add('ship');
     });
-    myShips.push(cells);
+    // 취소를 위해 버튼 정보를 함께 저장
+    myShips.push({ cells, btn: selectedShipBtn });
     selectedShipBtn.disabled = true;
     selectedShipBtn.classList.remove('selected');
     selectedShipSize = null;
+    selectedShipBtn = null;
 }
 
 document.getElementById('login-btn').onclick = async () => {
@@ -85,38 +105,46 @@ document.getElementById('login-btn').onclick = async () => {
     if (!myNickname) return alert("팀명을 입력하세요!");
 
     try {
+        // 방 인원 확인하여 팀 자동 배정
+        const roomSnapshot = await get(ref(db, `rooms/${currentRoom}/players`));
+        const playersInRoom = roomSnapshot.val();
+        const playerCount = playersInRoom ? Object.keys(playersInRoom).length : 0;
+
+        if (playerCount >= 2) return alert("이 방은 이미 가득 찼습니다!");
+
+        // 0명이면 red(홍팀), 1명이면 blue(청팀)
+        const myTeam = (playerCount === 0) ? 'red' : 'blue';
+        document.body.classList.add(myTeam === 'red' ? 'team-red' : 'team-blue');
+
         const userCred = await signInAnonymously(auth);
         myUid = userCred.user.uid;
-        console.log("로그인 성공! UID:", myUid);
 
-        // 접속 정보를 DB에 강제로 한 번 씁니다. (연결 확인용)
+        // 접속 정보 기록
         await set(ref(db, `rooms/${currentRoom}/players/${myUid}`), {
             nickname: myNickname,
-            isReady: false
+            isReady: false,
+            team: myTeam
         });
-        console.log("DB에 접속 정보 기록 완료!");
 
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('game-screen').classList.remove('hidden');
         document.getElementById('display-room').innerText = currentRoom;
-        document.getElementById('display-name').innerText = myNickname;
+        document.getElementById('display-name').innerText = `${myNickname} (${myTeam === 'red' ? '홍팀' : '청팀'})`;
 
         createBoards();
         listenToRoom();
     } catch (error) {
         console.error("접속 중 에러 발생:", error);
-        alert("접속 실패! 콘솔을 확인하세요.");
+        alert("접속 실패!");
     }
 };
 
 document.getElementById('ready-btn').onclick = async () => {
     if (myShips.length < 5) return alert("모든 배를 배치해야 합니다!");
     const updates = {};
-    updates[`rooms/${currentRoom}/players/${myUid}`] = {
-        nickname: myNickname,
-        ships: myShips.flat(),
-        isReady: true
-    };
+    updates[`rooms/${currentRoom}/players/${myUid}/ships`] = myShips.map(s => s.cells).flat();
+    updates[`rooms/${currentRoom}/players/${myUid}/isReady`] = true;
+    
     await update(ref(db), updates);
     document.getElementById('ready-btn').disabled = true;
     document.getElementById('ready-btn').innerText = "상대 대기 중...";
@@ -213,8 +241,14 @@ async function attack(cellId) {
     if (myAttacks[cellId]) return;
 
     const isHit = enemyShips.includes(parseInt(cellId));
-    const result = isHit ? 'hit' : 'miss';
     
+    if (isHit) {
+        if (navigator.vibrate) navigator.vibrate([200, 50, 200]);
+        document.body.classList.add('hit-flash');
+        setTimeout(() => document.body.classList.remove('hit-flash'), 200);
+    }
+
+    const result = isHit ? 'hit' : 'miss';
     const updates = {};
     updates[`rooms/${currentRoom}/players/${myUid}/attacks/${cellId}`] = result;
     if (!isHit) updates[`rooms/${currentRoom}/turn`] = enemyId;

@@ -125,13 +125,32 @@ async function checkGameStart() {
 function listenToRoom() {
     onValue(ref(db, `rooms/${currentRoom}`), (snapshot) => {
         const data = snapshot.val();
-        if (!data) return;
         const info = document.getElementById('game-info');
+        if (!data || !data.players) {
+            info.innerText = "상대방을 기다리는 중...";
+            return;
+        }
+
+        const players = data.players;
+        const pIds = Object.keys(players);
+        const enemyId = pIds.find(id => id !== myUid);
         gameState = data.status || 'setup';
 
+        // 1. 접속 인원 확인 로직
+        if (gameState === 'setup') {
+            if (pIds.length === 1) {
+                info.innerText = "대기 중: 상대방이 아직 접속하지 않았습니다.";
+            } else if (pIds.length === 2) {
+                const enemyName = players[enemyId].nickname;
+                const enemyReady = players[enemyId].isReady ? "✅준비완료" : "📝배치중";
+                info.innerText = `상대 팀 [${enemyName}] 접속됨 (${enemyReady})`;
+            }
+        }
+
+        // 2. 게임 중 상태
         if (data.status === 'playing') {
             const isMyTurn = data.turn === myUid;
-            info.innerText = isMyTurn ? "🔥 우리 팀 차례!" : "⏳ 상대 팀 공격 중...";
+            info.innerText = isMyTurn ? "🔥 우리 팀 차례!" : `⏳ 상대(${players[enemyId].nickname}) 공격 중...`;
             renderBoards(data.players);
             checkWinner(data.players);
         } else if (data.status === 'finished') {

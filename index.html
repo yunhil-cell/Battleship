@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>교실 배틀쉽</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="auth-screen">
+        <h1>🚢 교실 배틀쉽</h1>
+        <input type="text" id="nickname" placeholder="팀명(닉네임) 입력">
+        <select id="room-select">
+            <option value="room1">1번 방</option>
+            <option value="room2">2번 방</option>
+            <option value="room3">3번 방</option>
+        </select>
+        <button id="login-btn">게임 접속</button>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <div class="status-bar">
+            <span id="display-room"></span> | <span id="display-name"></span>
+            <div id="game-info">상태: 접속 대기 중...</div>
+        </div>
+
+        <div class="boards-container">
+            <div class="board-wrapper">
+                <h3>내 진지 (배 배치)</h3>
+                <div id="my-board" class="grid"></div>
+                <div id="ship-selector">
+                    <button id="rotate-btn">방향: 가로</button>
+                    <div class="ship-buttons">
+                        <button class="ship-btn" data-size="4">항공모함(4)</button>
+                        <button class="ship-btn" data-size="3">순양함(3)</button>
+                        <button class="ship-btn" data-size="2">구축함1(2)</button>
+                        <button class="ship-btn" data-size="2">구축함2(2)</button>
+                        <button class="ship-btn" data-size="1">잠수함(1)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="board-wrapper">
+                <h3>상대 진지 (공격)</h3>
+                <div id="enemy-board" class="grid"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="ready-btn">배치 완료</button>
+            <button id="reset-btn" class="admin-btn">교사용 리셋</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (v10+) -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>

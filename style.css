@@ -1,28 +1,114 @@
 :root {
-    --cell-size: clamp(30px, 6vw, 45px);
-    --hit-color: #ff4d4d;
-    --miss-color: #33bbff;
-    --ship-color: #444;
+    --bg-color: #f8fafc;
+    --primary-navy: #1e293b;
+    --accent-color: #3b82f6; /* 기본값 */
+    --hit-red: #ef4444;
+    --miss-blue: #60a5fa;
+    --ship-gray: #475569;
+    --cell-size: clamp(35px, 8vw, 50px);
 }
 
-body { font-family: 'Pretendard', sans-serif; background: #f0f4f8; margin: 0; padding: 10px; display: flex; justify-content: center; }
+/* 홍팀/청팀 테마 스위칭 */
+body.team-red { --accent-color: #ef4444; }
+body.team-blue { --accent-color: #3b82f6; }
+
+body { 
+    font-family: 'Pretendard', -apple-system, sans-serif; 
+    background-color: var(--bg-color); 
+    color: var(--primary-navy);
+    margin: 0; padding: 20px;
+    display: flex; justify-content: center;
+    transition: background-color 0.2s ease; /* Flash 효과를 위한 트랜지션 */
+}
+
+/* 명중 시 화면 반짝임 효과 */
+body.hit-flash { background-color: #ff8888 !important; }
+
 .hidden { display: none !important; }
 
+#game-screen {
+    max-width: 1000px; width: 100%;
+    background: white; padding: 25px;
+    border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+/* 상태바 개선 */
+.status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 20px; border-bottom: 2px solid #f1f5f9; margin-bottom: 20px;
+}
+
+#game-info {
+    padding: 8px 16px; border-radius: 50px;
+    background: var(--accent-color); color: white;
+    font-weight: bold; font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+/* 보드 컨테이너 */
+.boards-container {
+    display: flex; flex-wrap: wrap; justify-content: space-around; gap: 30px;
+}
+
+.board-wrapper h3 {
+    text-align: center; margin-bottom: 15px; font-size: 1.1rem; color: var(--ship-gray);
+}
+
+/* 그리드 스타일링 */
 .grid {
     display: grid;
     grid-template-columns: repeat(8, var(--cell-size));
     grid-template-rows: repeat(8, var(--cell-size));
-    gap: 2px; background: #999; border: 3px solid #333;
+    gap: 4px; padding: 6px;
+    background: #e2e8f0; border-radius: 12px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.cell { width: var(--cell-size); height: var(--cell-size); background: white; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; }
-.cell.ship { background: var(--ship-color); }
-.cell.hit { background: var(--hit-color); color: white; position: relative; }
-.cell.hit::after { content: '💥'; }
-.cell.miss { background: var(--miss-color); position: relative; }
-.cell.miss::after { content: '💧'; }
+.cell {
+    width: var(--cell-size); height: var(--cell-size);
+    background: white; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: transform 0.1s, background 0.2s;
+}
 
-.boards-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 20px; }
-.ship-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
-.ship-btn.selected { background: #ffcc00; font-weight: bold; }
-.admin-btn { margin-top: 30px; background: #ddd; border: none; font-size: 11px; padding: 5px; border-radius: 4px; }
+.cell:active { transform: scale(0.95); }
+.cell.ship { background: var(--ship-gray); }
+.cell.hit { background: var(--hit-red); animation: shake 0.3s; }
+.cell.hit::after { 
+    content: '●'; 
+    color: white; 
+    font-size: calc(var(--cell-size) * 0.65); 
+    display: flex; align-items: center; justify-content: center;
+}
+.cell.miss { background: var(--miss-blue); }
+.cell.miss::after { 
+    content: '○'; 
+    color: white; 
+    font-size: calc(var(--cell-size) * 0.65); 
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* 배 배치 버튼 */
+#ship-selector { margin-top: 15px; }
+.ship-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+.ship-btn, #rotate-btn, #ready-btn {
+    padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;
+    background: white; cursor: pointer; font-size: 0.85rem;
+}
+
+.ship-btn.selected { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+.ship-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+#ready-btn {
+    width: 100%; margin-top: 20px; padding: 15px;
+    background: var(--primary-navy); color: white;
+    font-size: 1rem; font-weight: bold; border: none;
+}
+
+@keyframes shake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    20% { transform: translate(-1px, -2px) rotate(-1deg); }
+    50% { transform: translate(1px, 2px) rotate(1deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}

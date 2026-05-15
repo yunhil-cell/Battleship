@@ -170,7 +170,15 @@ function listenToRoom() {
     onValue(ref(db, `rooms/${currentRoom}`), (snapshot) => {
         const data = snapshot.val();
         const info = document.getElementById('game-info');
-        if (!data || !data.players) {
+        
+        // 데이터가 아예 날아갔다면(교사가 방을 리셋했다면) 멤버 전원 강제 새로고침
+        if (!data) {
+            alert("방이 초기화되었습니다. 메인 화면으로 돌아갑니다.");
+            location.reload();
+            return;
+        }
+
+        if (!data.players) {
             info.innerText = "상대방을 기다리는 중...";
             return;
         }
@@ -275,3 +283,19 @@ document.getElementById('reset-btn').onclick = () => {
         location.reload();
     }
 };
+
+// 첫 화면 전체 리셋 (비밀번호 마스킹 처리)
+const globalResetBtn = document.getElementById('global-reset-btn');
+if (globalResetBtn) {
+    globalResetBtn.onclick = async () => {
+        const pw = document.getElementById('global-reset-pw').value;
+        const room = document.getElementById('room-select').value;
+        if (pw === "reset") {
+            await remove(ref(db, `rooms/${room}`));
+            alert(`${room} 방이 강제 초기화 되었습니다.`);
+            document.getElementById('global-reset-pw').value = '';
+        } else {
+            alert("비밀번호가 틀렸습니다.");
+        }
+    };
+}

@@ -83,14 +83,30 @@ document.getElementById('login-btn').onclick = async () => {
     myNickname = document.getElementById('nickname').value;
     currentRoom = document.getElementById('room-select').value;
     if (!myNickname) return alert("팀명을 입력하세요!");
-    const userCred = await signInAnonymously(auth);
-    myUid = userCred.user.uid;
-    document.getElementById('auth-screen').classList.add('hidden');
-    document.getElementById('game-screen').classList.remove('hidden');
-    document.getElementById('display-room').innerText = currentRoom;
-    document.getElementById('display-name').innerText = myNickname;
-    createBoards();
-    listenToRoom();
+
+    try {
+        const userCred = await signInAnonymously(auth);
+        myUid = userCred.user.uid;
+        console.log("로그인 성공! UID:", myUid);
+
+        // 접속 정보를 DB에 강제로 한 번 씁니다. (연결 확인용)
+        await set(ref(db, `rooms/${currentRoom}/players/${myUid}`), {
+            nickname: myNickname,
+            isReady: false
+        });
+        console.log("DB에 접속 정보 기록 완료!");
+
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        document.getElementById('display-room').innerText = currentRoom;
+        document.getElementById('display-name').innerText = myNickname;
+
+        createBoards();
+        listenToRoom();
+    } catch (error) {
+        console.error("접속 중 에러 발생:", error);
+        alert("접속 실패! 콘솔을 확인하세요.");
+    }
 };
 
 document.getElementById('ready-btn').onclick = async () => {

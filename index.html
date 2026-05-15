@@ -45,17 +45,34 @@
             <div class="board-wrapper left">
                 <h3>우리 함대 진지</h3>
                 <div id="my-board" class="grid"></div>
+                <div id="my-ship-status" class="ship-status-container"></div>
+                
                 <div id="ship-selector">
                     <div class="selector-header">
                         <span>함선 배치</span>
                         <button id="rotate-btn">방향: 가로</button>
                     </div>
                     <div class="ship-buttons">
-                        <button class="ship-btn" data-size="4">항공모함(4)</button>
-                        <button class="ship-btn" data-size="3">순양함(3)</button>
-                        <button class="ship-btn" data-size="2">구축함1(2)</button>
-                        <button class="ship-btn" data-size="2">구축함2(2)</button>
-                        <button class="ship-btn" data-size="1">잠수함(1)</button>
+                        <div class="ship-btn" data-size="4">
+                            <span class="s-label">항공모함</span>
+                            <div class="ship-visual"><div class="sc"></div><div class="sc"></div><div class="sc"></div><div class="sc"></div></div>
+                        </div>
+                        <div class="ship-btn" data-size="3">
+                            <span class="s-label">순양함</span>
+                            <div class="ship-visual"><div class="sc"></div><div class="sc"></div><div class="sc"></div></div>
+                        </div>
+                        <div class="ship-btn" data-size="2">
+                            <span class="s-label">구축함1</span>
+                            <div class="ship-visual"><div class="sc"></div><div class="sc"></div></div>
+                        </div>
+                        <div class="ship-btn" data-size="2">
+                            <span class="s-label">구축함2</span>
+                            <div class="ship-visual"><div class="sc"></div><div class="sc"></div></div>
+                        </div>
+                        <div class="ship-btn" data-size="1">
+                            <span class="s-label">잠수함</span>
+                            <div class="ship-visual"><div class="sc"></div></div>
+                        </div>
                     </div>
                 </div>
                 <button id="ready-btn">전투 배치 완료</button>
@@ -64,9 +81,14 @@
             <div class="board-wrapper right">
                 <h3>상대 함대 진지</h3>
                 <div id="enemy-board" class="grid"></div>
+                <div id="enemy-ship-status" class="ship-status-container"></div>
+                
                 <div class="footer-area">
                     <p class="guide">적 함대를 클릭하여 공격하세요!</p>
-                    <button id="reset-btn" class="admin-btn">리셋 (password: reset)</button>
+                    <div class="admin-reset-area">
+                        <input type="password" id="internal-reset-pw" placeholder="리셋 코드" style="width: 100px; padding: 5px;">
+                        <button id="reset-btn" class="admin-btn">방 초기화</button>
+                    </div>
                 </div>
             </div>
         </div>

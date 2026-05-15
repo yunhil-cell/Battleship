@@ -141,10 +141,9 @@ body.hit-flash {
 /* 2. 게임 메인 레이아웃 (좌우 분할) */
 #game-screen {
     width: 95vw;
-    height: 90vh;
+    height: 95vh;
     background: white;
     border-radius: 20px;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
@@ -175,14 +174,16 @@ body.hit-flash {
 
 .boards-container {
     display: flex;
+    flex-wrap: wrap; /* 화면 좁으면 자동 줄바꿈 (태블릿 세로 모드 대응) */
     flex: 1;
-    padding: 20px;
-    gap: 40px;
+    padding: 15px;
+    gap: 30px;
     justify-content: center;
+    overflow-y: auto; /* 내용이 길면 스크롤 생성 */
 }
 
 .board-wrapper {
-    flex: 1;
+    flex: 1 1 320px; /* 최소 320px 유지, 화면에 맞춰 자동 조절 */
     max-width: 500px;
     display: flex;
     flex-direction: column;
@@ -244,20 +245,21 @@ body.hit-flash {
     justify-content: center;
 }
 
-/* 4. 컨트롤러 */
+/* 4. 컨트롤러 및 시각화 요소 */
 #ship-selector {
     width: 100%;
-    margin-top: 15px;
+    margin-top: 10px;
     padding: 12px;
     background: #f8fafc;
     border-radius: 10px;
+    box-sizing: border-box;
 }
 
 .selector-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     font-size: 0.9rem;
 }
 
@@ -267,7 +269,27 @@ body.hit-flash {
     gap: 6px;
 }
 
-.ship-btn,
+/* 시각화된 배 버튼 */
+.ship-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.s-label { font-size: 0.75rem; margin-bottom: 4px; }
+.ship-visual { display: flex; gap: 2px; }
+.sc { width: 12px; height: 12px; background: var(--ship-gray); border-radius: 2px; }
+
+.ship-btn.selected { background: var(--accent-color); border-color: var(--accent-color); color: white; }
+.ship-btn.selected .sc { background: white; }
+.ship-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
 #rotate-btn {
     padding: 8px;
     font-size: 0.75rem;
@@ -277,10 +299,18 @@ body.hit-flash {
     cursor: pointer;
 }
 
-.ship-btn.selected {
-    background: var(--accent-color);
-    color: white;
+/* 생존 현황판 */
+.ship-status-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    min-height: 20px;
+    justify-content: center;
 }
+
+.status-ship { display: flex; gap: 2px; padding: 4px; background: #f1f5f9; border-radius: 4px; }
+.status-ship .sc { width: 12px; height: 12px; background: var(--ship-gray); border-radius: 2px; transition: background 0.3s; }
+.status-ship.sunk .sc { background: var(--hit-red); }
 
 #ready-btn {
     width: 100%;

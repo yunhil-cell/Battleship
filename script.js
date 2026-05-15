@@ -48,9 +48,10 @@ function createBoards() {
 document.querySelectorAll('.ship-btn').forEach(btn => {
     btn.onclick = (e) => {
         document.querySelectorAll('.ship-btn').forEach(b => b.classList.remove('selected'));
-        e.target.classList.add('selected');
-        selectedShipSize = parseInt(e.target.dataset.size);
-        selectedShipBtn = e.target;
+        const currentBtn = e.currentTarget; // 내부 요소를 눌러도 전체 버튼을 선택하도록 변경
+        currentBtn.classList.add('selected');
+        selectedShipSize = parseInt(currentBtn.dataset.size);
+        selectedShipBtn = currentBtn;
     };
 });
 
@@ -142,7 +143,8 @@ document.getElementById('login-btn').onclick = async () => {
 document.getElementById('ready-btn').onclick = async () => {
     if (myShips.length < 5) return alert("모든 배를 배치해야 합니다!");
     const updates = {};
-    updates[`rooms/${currentRoom}/players/${myUid}/ships`] = myShips.map(s => s.cells).flat();
+    // 함선 형체를 유지하여 저장 (2차원 배열 구조)
+    updates[`rooms/${currentRoom}/players/${myUid}/ships`] = myShips.map(s => s.cells);
     updates[`rooms/${currentRoom}/players/${myUid}/isReady`] = true;
     
     await update(ref(db), updates);
@@ -212,6 +214,28 @@ function listenToRoom() {
     });
 }
 
+// 생존 현황판 그리기 함수
+function updateShipStatus(containerId, ships, attacks) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
+    if (!ships) return;
+    
+    ships.forEach(shipCells => {
+        // 배의 모든 칸이 hit 상태인지 확인 (침몰 여부)
+        const isSunk = shipCells.every(id => attacks && attacks[id] === 'hit');
+        const shipDiv = document.createElement('div');
+        shipDiv.className = `status-ship ${isSunk ? 'sunk' : ''}`;
+        
+        shipCells.forEach(() => {
+            const cell = document.createElement('div');
+            cell.className = 'sc';
+            shipDiv.appendChild(cell);
+        });
+        container.appendChild(shipDiv);
+    });
+}
+
 function renderBoards(players, showAll = false) {
     const enemyId = Object.keys(players).find(id => id !== myUid);
     if (!enemyId) return;
@@ -229,12 +253,16 @@ function renderBoards(players, showAll = false) {
         });
     }
     if (showAll && enemyData.ships) {
-        enemyData.ships.forEach(id => {
+        enemyData.ships.flat().forEach(id => {
             if (!enemyBoardEl.children[id].classList.contains('hit')) {
                 enemyBoardEl.children[id].classList.add('ship');
             }
         });
     }
+
+    // 아군/적군 현황판 업데이트
+    updateShipStatus('my-ship-status', myData.ships, enemyData.attacks);
+    updateShipStatus('enemy-ship-status', enemyData.ships, myData.attacks);
 }
 
 async function attack(cellId) {
@@ -248,7 +276,8 @@ async function attack(cellId) {
 
     if (myAttacks[cellId]) return;
 
-    const isHit = enemyShips.includes(parseInt(cellId));
+    // 2차원 배열이므로 flat() 처리 후 확인
+    const isHit = enemyShips.flat().includes(parseInt(cellId));
     
     if (isHit) {
         if (navigator.vibrate) navigator.vibrate([200, 50, 200]);

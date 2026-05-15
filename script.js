@@ -10,7 +10,7 @@ const firebaseConfig = {
     storageBucket: "battleship-f08f8.firebasestorage.app",
     messagingSenderId: "1146329001",
     appId: "1:1146329001:web:f2d698e5661582ee1f96b8",
-    databaseURL: "https://battleship-f08f8-default-rtdb.firebaseio.com"
+    databaseURL: "https://battleship-f08f8-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
 const app = initializeApp(firebaseConfig);

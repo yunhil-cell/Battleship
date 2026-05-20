@@ -288,7 +288,7 @@ body.hit-flash {
 
 .ship-btn.selected { background: var(--accent-color); border-color: var(--accent-color); color: white; }
 .ship-btn.selected .sc { background: white; }
-.ship-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.ship-btn.placed { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
 
 #rotate-btn {
     padding: 8px;

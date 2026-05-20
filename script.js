@@ -47,8 +47,10 @@ function createBoards() {
 
 document.querySelectorAll('.ship-btn').forEach(btn => {
     btn.onclick = (e) => {
+        const currentBtn = e.currentTarget;
+        if (currentBtn.classList.contains('placed')) return; // 이미 배치된 배는 선택 무시
+        
         document.querySelectorAll('.ship-btn').forEach(b => b.classList.remove('selected'));
-        const currentBtn = e.currentTarget; // 내부 요소를 눌러도 전체 버튼을 선택하도록 변경
         currentBtn.classList.add('selected');
         selectedShipSize = parseInt(currentBtn.dataset.size);
         selectedShipBtn = currentBtn;
@@ -73,7 +75,10 @@ function placeShip(startId) {
                 deployedCells.delete(id);
                 myBoardEl.children[id].classList.remove('ship');
             });
-            targetShip.btn.disabled = false; // 버튼 재활성화
+            // 버튼 재활성화
+            targetShip.btn.classList.remove('placed');
+            targetShip.btn.style.opacity = '1';
+            targetShip.btn.style.cursor = 'pointer';
             myShips.splice(shipIndex, 1);
         }
         return;
@@ -94,8 +99,13 @@ function placeShip(startId) {
     });
     // 취소를 위해 버튼 정보를 함께 저장
     myShips.push({ cells, btn: selectedShipBtn });
-    selectedShipBtn.disabled = true;
+    
+    // 배치된 버튼 비활성화 (시각적 처리 포함)
+    selectedShipBtn.classList.add('placed');
+    selectedShipBtn.style.opacity = '0.3';
+    selectedShipBtn.style.cursor = 'not-allowed';
     selectedShipBtn.classList.remove('selected');
+    
     selectedShipSize = null;
     selectedShipBtn = null;
 }

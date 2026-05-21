@@ -17,7 +17,8 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-let myUid, myNickname, currentRoom;
+// myTeam 변수 추가
+let myUid, myNickname, currentRoom, myTeam;
 let selectedShipSize = null;
 let isHorizontal = true;
 let myShips = []; 

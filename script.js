@@ -357,22 +357,26 @@ function checkWinner(players) {
     });
 }
 
-document.getElementById('reset-btn').onclick = () => {
-    if (prompt("암호입력") === "reset") {
-        remove(ref(db, `rooms/${currentRoom}`));
+document.getElementById('reset-btn').onclick = async () => {
+    const pw = document.getElementById('local-reset-pw').value;
+    if (pw === "reset") {
+        await remove(ref(db, `rooms/${currentRoom}`));
+        alert(`현재 방(${currentRoom})이 초기화 되었습니다.`);
         location.reload();
+    } else {
+        alert("비밀번호가 틀렸습니다.");
     }
 };
 
-// 첫 화면 전체 리셋 (비밀번호 마스킹 처리)
+// 첫 화면 전체 리셋 (비밀번호 마스킹 처리 및 전체 방 초기화)
 const globalResetBtn = document.getElementById('global-reset-btn');
 if (globalResetBtn) {
     globalResetBtn.onclick = async () => {
         const pw = document.getElementById('global-reset-pw').value;
-        const room = document.getElementById('room-select').value;
         if (pw === "reset") {
-            await remove(ref(db, `rooms/${room}`));
-            alert(`${room} 방이 강제 초기화 되었습니다.`);
+            // 특정 방이 아닌 rooms 노드 전체를 삭제하여 생성된 모든 인스턴스를 날림
+            await remove(ref(db, 'rooms'));
+            alert("생성된 모든 대기실과 게임 방이 전체 초기화되었습니다.");
             document.getElementById('global-reset-pw').value = '';
         } else {
             alert("비밀번호가 틀렸습니다.");

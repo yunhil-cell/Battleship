@@ -101,26 +101,22 @@ body.hit-flash {
     font-size: 0.9rem;
 }
 
-.login-box input,
-.login-box select {
+.login-box input {
     width: 100%;
     padding: 12px;
     margin-bottom: 10px;
     border-radius: 10px;
     border: 1px solid #ddd;
     box-sizing: border-box;
+    text-align: center;
 }
 
-#login-btn {
-    width: 100%;
-    padding: 15px;
-    border-radius: 10px;
-    background: #0f172a;
-    color: white;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-}
+.room-actions { display: flex; flex-direction: column; gap: 8px; }
+.primary-btn { width: 100%; padding: 14px; border-radius: 10px; background: #0f172a; color: white; border: none; font-weight: bold; cursor: pointer; }
+.join-divider { font-size: 0.8rem; color: #94a3b8; margin: 2px 0; }
+.join-area { display: flex; gap: 5px; }
+.join-area input { margin-bottom: 0; flex: 2; }
+.secondary-btn { flex: 1; padding: 12px; border-radius: 10px; background: #3b82f6; color: white; border: none; font-weight: bold; cursor: pointer; }
 
 .notice {
     font-size: 0.8rem;

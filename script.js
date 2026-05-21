@@ -110,27 +110,32 @@ function placeShip(startId) {
     selectedShipBtn = null;
 }
 
-document.getElementById('login-btn').onclick = async () => {
+async function enterGame(roomCode, isCreating) {
     myNickname = document.getElementById('nickname').value;
-    currentRoom = document.getElementById('room-select').value;
     if (!myNickname) return alert("팀명을 입력하세요!");
 
     try {
-        // 방 인원 확인하여 팀 자동 배정
-        const roomSnapshot = await get(ref(db, `rooms/${currentRoom}/players`));
-        const playersInRoom = roomSnapshot.val();
-        const playerCount = playersInRoom ? Object.keys(playersInRoom).length : 0;
+        const roomRef = ref(db, `rooms/${roomCode}`);
+        const roomSnapshot = await get(roomRef);
+        const roomData = roomSnapshot.val();
 
-        if (playerCount >= 2) return alert("이 방은 이미 가득 찼습니다!");
+        if (isCreating) {
+            if (roomData) return alert("이미 존재하는 방 코드입니다. 다시 시도하세요.");
+            myTeam = 'red'; // 방장은 무조건 홍팀
+        } else {
+            if (!roomData) return alert("존재하지 않는 입장 코드입니다.");
+            if (roomData.status === 'playing') return alert("⚠️ 이미 교전이 시작된 방입니다.");
+            if (roomData.status === 'finished') return alert("🏁 이미 종료된 게임입니다.");
+            const playerCount = roomData.players ? Object.keys(roomData.players).length : 0;
+            if (playerCount >= 2) return alert("🚫 방이 가득 찼습니다.");
+            myTeam = 'blue'; // 참여자는 무조건 청팀
+        }
 
-        // 0명이면 red(홍팀), 1명이면 blue(청팀)
-        const myTeam = (playerCount === 0) ? 'red' : 'blue';
+        currentRoom = roomCode;
         document.body.classList.add(myTeam === 'red' ? 'team-red' : 'team-blue');
-
         const userCred = await signInAnonymously(auth);
         myUid = userCred.user.uid;
 
-        // 접속 정보 기록
         await set(ref(db, `rooms/${currentRoom}/players/${myUid}`), {
             nickname: myNickname,
             isReady: false,
@@ -139,15 +144,27 @@ document.getElementById('login-btn').onclick = async () => {
 
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('game-screen').classList.remove('hidden');
-        document.getElementById('display-room').innerText = currentRoom;
+        // 상태바에 방 번호 표시
+        document.getElementById('display-room').innerText = `코드: ${currentRoom}`;
         document.getElementById('display-name').innerText = `${myNickname} (${myTeam === 'red' ? '홍팀' : '청팀'})`;
 
         createBoards();
         listenToRoom();
     } catch (error) {
-        console.error("접속 중 에러 발생:", error);
-        alert("접속 실패!");
+        alert("접속 실패! 네트워크를 확인하세요.");
     }
+}
+
+document.getElementById('create-room-btn').onclick = () => {
+    // 1000 ~ 9999 사이의 4자리 랜덤 숫자 코드 생성
+    const randomCode = Math.floor(1000 + Math.random() * 9000).toString(); 
+    enterGame(randomCode, true);
+};
+
+document.getElementById('join-room-btn').onclick = () => {
+    const codeInput = document.getElementById('join-code').value.trim();
+    if (!codeInput) return alert("입장 코드를 입력하세요.");
+    enterGame(codeInput, false);
 };
 
 document.getElementById('ready-btn').onclick = async () => {
@@ -183,9 +200,13 @@ function listenToRoom() {
         const data = snapshot.val();
         const info = document.getElementById('game-info');
         
-        // 데이터가 아예 날아갔다면(교사가 방을 리셋했다면) 멤버 전원 강제 새로고침
+        // 방 데이터가 삭제된 경우
         if (!data) {
-            alert("방이 초기화되었습니다. 메인 화면으로 돌아갑니다.");
+            if (gameState === 'finished') {
+                alert("게임이 종료되어 대기실로 이동합니다.");
+            } else if (gameState !== 'setup') {
+                alert("방이 강제 초기화되었습니다.");
+            }
             location.reload();
             return;
         }
@@ -198,28 +219,35 @@ function listenToRoom() {
         const players = data.players;
         const pIds = Object.keys(players);
         const enemyId = pIds.find(id => id !== myUid);
+        
+        // 피격 감지(화면 흔들림)는 이전 단계에서 누락하셨다면 여기에 추가할 수 있습니다.
+        
         gameState = data.status || 'setup';
 
-        // 1. 접속 인원 확인 로직
         if (gameState === 'setup') {
             if (pIds.length === 1) {
-                info.innerText = "대기 중: 상대방이 아직 접속하지 않았습니다.";
+                info.innerText = `친구에게 입장코드 [${currentRoom}]을 알려주세요!`;
             } else if (pIds.length === 2) {
                 const enemyName = players[enemyId].nickname;
                 const enemyReady = players[enemyId].isReady ? "✅준비완료" : "📝배치중";
                 info.innerText = `상대 팀 [${enemyName}] 접속됨 (${enemyReady})`;
             }
-        }
-
-        // 2. 게임 중 상태
-        if (data.status === 'playing') {
+        } else if (gameState === 'playing') {
             const isMyTurn = data.turn === myUid;
             info.innerText = isMyTurn ? "🔥 우리 팀 차례!" : `⏳ 상대(${players[enemyId].nickname}) 공격 중...`;
             renderBoards(data.players);
             checkWinner(data.players);
-        } else if (data.status === 'finished') {
-            info.innerText = `🏁 게임 종료! 승자: ${data.winnerNickname}`;
+        } else if (gameState === 'finished') {
+            const isWinner = data.winnerNickname === myNickname;
+            info.innerText = isWinner ? "🏆 승리했습니다! (5초 후 종료)" : "💀 패배했습니다... (5초 후 종료)";
             renderBoards(data.players, true);
+            
+            // 승리한 기기에서만 5초 후 방을 삭제 (양쪽 다 동시에 삭제명령을 보내면 꼬일 수 있으므로)
+            if (isWinner) {
+                setTimeout(async () => {
+                    await remove(ref(db, `rooms/${currentRoom}`));
+                }, 5000);
+            }
         }
     });
 }

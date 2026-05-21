@@ -16,14 +16,16 @@
             
             <div class="login-box">
                 <input type="text" id="nickname" placeholder="팀명을 입력하세요">
-                <select id="room-select">
-                    <option value="room1">📍 1번 작전 구역</option>
-                    <option value="room2">📍 2번 작전 구역</option>
-                    <option value="room3">📍 3번 작전 구역</option>
-                </select>
-                <button id="login-btn">전투 개시</button>
+                <div class="room-actions">
+                    <button id="create-room-btn" class="primary-btn">새 작전 방 만들기</button>
+                    <div class="join-divider">또는</div>
+                    <div class="join-area">
+                        <input type="text" id="join-code" placeholder="입장 코드 (4자리 숫자)">
+                        <button id="join-room-btn" class="secondary-btn">참여하기</button>
+                    </div>
+                </div>
             </div>
-            <p class="notice">* 입장 순서에 따라 <span class="red-text">홍팀</span>/<span class="blue-text">청팀</span> 자동 배정</p>
+            <p class="notice">* 방을 만들면 <span class="red-text">홍팀</span>, 참여하면 <span class="blue-text">청팀</span>이 됩니다.</p>
             
             <div style="margin-top: 15px;">
                 <input type="password" id="global-reset-pw" placeholder="리셋 암호" style="width: 100px; padding: 5px;">

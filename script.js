@@ -24,9 +24,15 @@ let isHorizontal = true;
 let myShips = []; 
 let deployedCells = new Set();
 let gameState = 'setup'; 
+let lastEnemyHitCount = 0; // 피격 감지용 변수 (hit 누적 횟수)
 
 const myBoardEl = document.getElementById('my-board');
 const enemyBoardEl = document.getElementById('enemy-board');
+
+function triggerScreenShake() {
+    document.body.classList.add('screen-shake');
+    setTimeout(() => document.body.classList.remove('screen-shake'), 400);
+}
 
 function createBoards() {
     myBoardEl.innerHTML = '';
@@ -116,7 +122,7 @@ async function enterGame(roomCode, isCreating) {
     if (!myNickname) return alert("팀명을 입력하세요!");
 
     try {
-        const roomRef = ref(db, `rooms/${roomCode}`);
+        const roomRef = ref(db, `battleship_rooms/${roomCode}`);
         const roomSnapshot = await get(roomRef);
         const roomData = roomSnapshot.val();
 
@@ -137,7 +143,7 @@ async function enterGame(roomCode, isCreating) {
         const userCred = await signInAnonymously(auth);
         myUid = userCred.user.uid;
 
-        await set(ref(db, `rooms/${currentRoom}/players/${myUid}`), {
+        await set(ref(db, `battleship_rooms/${currentRoom}/players/${myUid}`), {
             nickname: myNickname,
             isReady: false,
             team: myTeam
@@ -163,7 +169,7 @@ document.getElementById('create-room-btn').onclick = async () => {
     // DB에 존재하지 않는 유일한 코드가 나올 때까지 실시간으로 검증 및 재생성 진행
     while (!isUnique) {
         const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
-        const roomSnapshot = await get(ref(db, `rooms/${randomCode}`));
+        const roomSnapshot = await get(ref(db, `battleship_rooms/${randomCode}`));
         
         if (!roomSnapshot.exists()) {
             uniqueCode = randomCode;
@@ -184,8 +190,8 @@ document.getElementById('ready-btn').onclick = async () => {
     if (myShips.length < 5) return alert("모든 배를 배치해야 합니다!");
     const updates = {};
     // 함선 형체를 유지하여 저장 (2차원 배열 구조)
-    updates[`rooms/${currentRoom}/players/${myUid}/ships`] = myShips.map(s => s.cells);
-    updates[`rooms/${currentRoom}/players/${myUid}/isReady`] = true;
+    updates[`battleship_rooms/${currentRoom}/players/${myUid}/ships`] = myShips.map(s => s.cells);
+    updates[`battleship_rooms/${currentRoom}/players/${myUid}/isReady`] = true;
     
     await update(ref(db), updates);
     document.getElementById('ready-btn').disabled = true;
@@ -194,13 +200,13 @@ document.getElementById('ready-btn').onclick = async () => {
 };
 
 async function checkGameStart() {
-    const snapshot = await get(ref(db, `rooms/${currentRoom}/players`));
+    const snapshot = await get(ref(db, `battleship_rooms/${currentRoom}/players`));
     const players = snapshot.val();
     if (players && Object.keys(players).length === 2) {
         const pIds = Object.keys(players);
         const allReady = pIds.every(id => players[id].isReady);
         if (allReady) {
-            await update(ref(db, `rooms/${currentRoom}`), {
+            await update(ref(db, `battleship_rooms/${currentRoom}`), {
                 status: 'playing',
                 turn: pIds[Math.floor(Math.random() * 2)]
             });
@@ -209,7 +215,7 @@ async function checkGameStart() {
 }
 
 function listenToRoom() {
-    onValue(ref(db, `rooms/${currentRoom}`), (snapshot) => {
+    onValue(ref(db, `battleship_rooms/${currentRoom}`), (snapshot) => {
         const data = snapshot.val();
         const info = document.getElementById('game-info');
         
@@ -233,7 +239,15 @@ function listenToRoom() {
         const pIds = Object.keys(players);
         const enemyId = pIds.find(id => id !== myUid);
         
-        // 피격 감지(화면 흔들림)는 이전 단계에서 누락하셨다면 여기에 추가할 수 있습니다.
+        // 피격 감지 (상대방 공격 성공 시 내 화면 흔들림)
+        if (enemyId && players[enemyId].attacks) {
+            // JS 객체의 숫자 키는 자동 정렬되므로, 타격(hit)의 총 개수가 증가했는지 검사합니다.
+            const currentHitCount = Object.values(players[enemyId].attacks).filter(v => v === 'hit').length;
+            if (currentHitCount > lastEnemyHitCount) {
+                triggerScreenShake();
+                lastEnemyHitCount = currentHitCount;
+            }
+        }
         
         gameState = data.status || 'setup';
 
@@ -255,10 +269,10 @@ function listenToRoom() {
             info.innerText = isWinner ? "🏆 승리했습니다! (5초 후 종료)" : "💀 패배했습니다... (5초 후 종료)";
             renderBoards(data.players, true);
             
-            // 승리한 기기에서만 5초 후 방을 삭제 (양쪽 다 동시에 삭제명령을 보내면 꼬일 수 있으므로)
+            // 승리한 기기에서만 5초 후 방을 삭제
             if (isWinner) {
                 setTimeout(async () => {
-                    await remove(ref(db, `rooms/${currentRoom}`));
+                    await remove(ref(db, `battleship_rooms/${currentRoom}`));
                 }, 5000);
             }
         }
@@ -317,7 +331,7 @@ function renderBoards(players, showAll = false) {
 }
 
 async function attack(cellId) {
-    const snapshot = await get(ref(db, `rooms/${currentRoom}`));
+    const snapshot = await get(ref(db, `battleship_rooms/${currentRoom}`));
     const data = snapshot.val();
     if (data.status !== 'playing' || data.turn !== myUid) return;
     
@@ -331,6 +345,7 @@ async function attack(cellId) {
     const isHit = enemyShips.flat().includes(parseInt(cellId));
     
     if (isHit) {
+        triggerScreenShake();
         if (navigator.vibrate) navigator.vibrate([200, 50, 200]);
         document.body.classList.add('hit-flash');
         setTimeout(() => document.body.classList.remove('hit-flash'), 200);
@@ -338,8 +353,8 @@ async function attack(cellId) {
 
     const result = isHit ? 'hit' : 'miss';
     const updates = {};
-    updates[`rooms/${currentRoom}/players/${myUid}/attacks/${cellId}`] = result;
-    if (!isHit) updates[`rooms/${currentRoom}/turn`] = enemyId;
+    updates[`battleship_rooms/${currentRoom}/players/${myUid}/attacks/${cellId}`] = result;
+    if (!isHit) updates[`battleship_rooms/${currentRoom}/turn`] = enemyId;
     
     await update(ref(db), updates);
 }
@@ -349,7 +364,7 @@ function checkWinner(players) {
         const attacks = players[id].attacks || {};
         const hitCount = Object.values(attacks).filter(v => v === 'hit').length;
         if (hitCount === 12) {
-            update(ref(db, `rooms/${currentRoom}`), {
+            update(ref(db, `battleship_rooms/${currentRoom}`), {
                 status: 'finished',
                 winnerNickname: players[id].nickname
             });
@@ -360,7 +375,7 @@ function checkWinner(players) {
 document.getElementById('reset-btn').onclick = async () => {
     const pw = document.getElementById('local-reset-pw').value;
     if (pw === "reset") {
-        await remove(ref(db, `rooms/${currentRoom}`));
+        await remove(ref(db, `battleship_rooms/${currentRoom}`));
         alert(`현재 방(${currentRoom})이 초기화 되었습니다.`);
         location.reload();
     } else {
@@ -374,8 +389,8 @@ if (globalResetBtn) {
     globalResetBtn.onclick = async () => {
         const pw = document.getElementById('global-reset-pw').value;
         if (pw === "reset") {
-            // 특정 방이 아닌 rooms 노드 전체를 삭제하여 생성된 모든 인스턴스를 날림
-            await remove(ref(db, 'rooms'));
+            // 특정 방이 아닌 battleship_rooms 노드 전체를 삭제
+            await remove(ref(db, 'battleship_rooms'));
             alert("생성된 모든 대기실과 게임 방이 전체 초기화되었습니다.");
             document.getElementById('global-reset-pw').value = '';
         } else {

@@ -4,8 +4,8 @@
     --hit-red: #ef4444;
     --miss-blue: #60a5fa;
     --ship-gray: #475569;
-    --cell-size: clamp(30px, 5.5vw, 45px);
-    /* 화면 폭에 따라 말판 크기 조절 */
+    /* 가로(vw)와 세로(vh) 중 더 작은 해상도에 맞춰 말판 크기를 자동 축소하여 상하 잘림 방지 */
+    --cell-size: clamp(28px, min(5.2vw, 7.2vh), 45px);
 }
 
 body.team-red {
@@ -134,22 +134,26 @@ body.hit-flash {
     font-weight: bold;
 }
 
-/* 2. 게임 메인 레이아웃 (좌우 분할) */
+/* 2. 게임 메인 레이아웃 (좌우 분할 및 상하 비율 최적화) */
 #game-screen {
-    width: 95vw;
-    height: 95vh;
+    width: 96vw;
+    height: 96vh;
+    max-height: 100vh;
     background: white;
     border-radius: 20px;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
 }
 
 .status-bar {
-    padding: 15px 30px;
+    padding: 10px 25px;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .room-badge {
@@ -170,12 +174,13 @@ body.hit-flash {
 
 .boards-container {
     display: flex;
-    flex-wrap: wrap; /* 화면 좁으면 자동 줄바꿈 (태블릿 세로 모드 대응) */
+    flex-wrap: nowrap;
     flex: 1;
-    padding: 15px;
-    gap: 30px;
+    padding: 10px 20px;
+    gap: 20px;
     justify-content: center;
-    overflow-y: auto; /* 내용이 길면 스크롤 생성 */
+    align-items: center;
+    overflow: hidden; /* 태블릿 가로모드에서 내부 스크롤 및 잘림 현상 제거 */
 }
 
 .board-wrapper {

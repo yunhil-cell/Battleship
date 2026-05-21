@@ -156,10 +156,22 @@ async function enterGame(roomCode, isCreating) {
     }
 }
 
-document.getElementById('create-room-btn').onclick = () => {
-    // 1000 ~ 9999 사이의 4자리 랜덤 숫자 코드 생성
-    const randomCode = Math.floor(1000 + Math.random() * 9000).toString(); 
-    enterGame(randomCode, true);
+document.getElementById('create-room-btn').onclick = async () => {
+    let uniqueCode = "";
+    let isUnique = false;
+    
+    // DB에 존재하지 않는 유일한 코드가 나올 때까지 실시간으로 검증 및 재생성 진행
+    while (!isUnique) {
+        const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
+        const roomSnapshot = await get(ref(db, `rooms/${randomCode}`));
+        
+        if (!roomSnapshot.exists()) {
+            uniqueCode = randomCode;
+            isUnique = true;
+        }
+    }
+    
+    enterGame(uniqueCode, true);
 };
 
 document.getElementById('join-room-btn').onclick = () => {
